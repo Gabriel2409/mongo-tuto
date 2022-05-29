@@ -77,3 +77,25 @@ implicit AND:
 - `{<statement1>, <statement2>, ...}` is the same as`{"$and":[{<statement1>}, {<statement2>}, ...]}`
 - when querying on the same field: `{"population": {"$gt":15, "$lt":100}}` is the same as `{"$and":[{"population":{"$gt":15}},{"population":{"$lt":100}}]}`
 - be careful with implicit AND : `db.testdb.find({"$or":[{"b":"I"},{"b":"II"}], "$or":[{"a":1},{"a":3}]})`: here, $or is declared twice in the same object so only the second $or will be considered => correct way to do it: `db.testdb.find({$and:[{"$or":[{"b":"I"},{"b":"II"}]}, {"$or":[{"a":1},{"a":3}]}]})`
+
+# Expressive $expr
+Allows the use of aggregation expressions withing the query language
+- For ex: comparison of fields inside the same doc: `db.collection.find({$expr:{$eq:["$<field1>", "$<field2>"]}})`
+
+NOTE: `db.trips.find({"tripduration":{$gt:1200},$expr:{$eq:["$start station id", "$end station id"]}}).count()` is the same as `db.trips.find({$expr:{$and:[{$gt:["$tripduration", 1200]},{$eq:["$start station id", "$end station id"]}]}}).count()`
+
+# Array Operators
+- `$push`: adds element to array or turns a field into an array field if it was previously of a different type
+- when doing a find query on an array field, such as `db.listingsAndReviews.findOne({"amenities":"Shampoo"})`: the query will return all the docs where Shampoo is in the amenities array. 
+- Now if the query is `{"amenities":["Shampoo", "TV"]})`, we will get docs where the array field is exactly `["Shampoo", "TV"]` in that order.
+- `$all`: we get all elements where array field contains at least the given elements (order is not important):  `{"amenities":{$all:["Shampoo", "TV"]}})`
+- `$size`: filter by array size: `{"amenities":{$size:2,$all:["Shampoo", "TV"]}})`
+
+# projections:
+- after a query: pass another object such as `{bedrooms:1, amenities:1,  _id:0}` to only show the fields we want to get: for ex: `db.listingsAndReviews.find({"amenities":{$all:["Free parking on premises", "Air conditioning", "Wifi"]}},{bedrooms:1, amenities:1,  _id:0})`
+- array field projections: here, scores array contains subdocuments: `db.grades.find({"class_id":431},{scores:{$elemMatch:{score:{$gt:85}}}})` will only show the scores field if one of the elem of the array has a score above 85. Then it will only show the relevant elements
+- if $elemMatch is used in the query, the result is the full doc where at least one element of the array matches the condition
+
+# query subdocuments
+- dot notation: `db.collection.find({"<field1>.<attr1>":<value>})`
+- for array: .0, .1...
