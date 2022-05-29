@@ -48,3 +48,32 @@ NOTE: `db.<collection>.insert([{"_id":1, "test":1},{"_id":1, "test":1},{"_id":3,
 - `db.<collection>.deleteOne(<query>)`
 - `db.<collection>.deleteMany(<query>)`
 - drop a collection from the mongo shell: `db.collection.drop()`
+
+# Advanced queries
+
+## comparison operators:
+Used inside a query
+- `{<field>:{<operator>:<value}`
+- `<op>` can be: 
+    - `"$eq"`: equal
+    - `"$ne"`: not equal
+    - `"$gt"`: greater than
+    - `"$gte"`: greater than or equal
+    - `"$lt"`: lower than
+    - `"$lte"`: lower than or equal
+- `{<field>:<value}` is equivalent to `{<field>:{"$eq":<value>}}`
+
+## logic operators:
+Combines multiple queries
+- `{<op>:[{<statement1>}, {<statement2>}, ...]}`
+    - `$and`: matches all the specified query clauses
+    - `$or`: matches at least one specified query clauses
+    - `$nor`: negates or: returns docs that fail to match all queries
+
+Not operator: inverts the condition, can not be used as a top operator 
+- `$not`: returns docs that dont match the query: `{<field>:{"$not":<operator-exp>}}`. Ex: `db.inspections.find({"date":{"$not":{"$eq":"Feb 21 2015"}}})`
+
+implicit AND: 
+- `{<statement1>, <statement2>, ...}` is the same as`{"$and":[{<statement1>}, {<statement2>}, ...]}`
+- when querying on the same field: `{"population": {"$gt":15, "$lt":100}}` is the same as `{"$and":[{"population":{"$gt":15}},{"population":{"$lt":100}}]}`
+- be careful with implicit AND : `db.testdb.find({"$or":[{"b":"I"},{"b":"II"}], "$or":[{"a":1},{"a":3}]})`: here, $or is declared twice in the same object so only the second $or will be considered => correct way to do it: `db.testdb.find({$and:[{"$or":[{"b":"I"},{"b":"II"}]}, {"$or":[{"a":1},{"a":3}]}]})`
