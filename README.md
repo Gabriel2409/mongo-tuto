@@ -101,7 +101,7 @@ NOTE: `db.trips.find({"tripduration":{$gt:1200}, $expr:{$eq:["$start station id"
 - dot notation: `db.collection.find({"<field1>.<attr1>":<value>})`
 - for array: .0, .1...
 
-# Aggregation framework
+## Aggregation framework
 Everything we do using the query language can also be done using the aggregation framework
 
 For ex:
@@ -112,3 +112,25 @@ Aggregation framework allows us to stack operations on data. It can allow us to 
 - `$group`: takes incoming data stream and siphons it into multiple distinct reservoirs. Example: group by countries: `db.listingsAndReviews.aggregate([{$project:{_id:0, address:1}},{$group:{_id:"$address.country", count:{$sum:1}}}])`
 
 ## Sort and limit
+
+- `db.zips.find({},{pop:1}).sort({pop:-1}).limit(2)` : limits to 2 results, sort by pop in descending order. Note: sort arg can be 1 (ascending) or -1 (descending)
+- Multi sort: `<...>.sort({pop:1, "loc.y":-1})`
+- can be used in aggregation framework: `db.listingsAndReviews.aggregate([{$project:{_id:0, room_type:1}}, {$group:{_id:"$room_type", count:{$sum:1}}}, {$sort:{count:-1}}, {$limit:2}])`
+
+Note: when using sort and limit, regardless of their order, mongodb will always sort first
+
+## Introduction to indexes
+- Index makes a query more efficient
+- In a database, an index is a special data structure that stores a small portion of the collection's data set in an easy to traverse form
+- `db.trips.createIndex({"birth year":1})`
+- compound index: `db.trips.createIndex({"start station id":1, "birth year":0})`
+- See all indexes: `db.trips.getIndexes()`
+- drop an index: `db.trips.dropIndex(<name>)`
+- Note: if we pass -1 instead of 1, the index is created in descending order (note that it does not really matter for single field index)
+
+## Introduction to data modelling
+- Data modeling is a way to organize fields in a document to support your application performance and queryting capabilities
+- Data should be stored in the way that it is used: everything that is queried together should be stored together
+
+## upsert (update or insert)
+- upsert is a hybrid command between update and insert and should only be used when needed: `db.collection.updateOne({<query>},{<update>}, {"upsert":true})` => if there is a query match, it will update it. If not it will insert a new document
